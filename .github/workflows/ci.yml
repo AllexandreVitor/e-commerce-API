@@ -16,7 +16,7 @@ on:
 jobs:
 
   # =============================================
-  # 1. Secrete Scanning
+  # 1. Secret Scanning
   # =============================================
   gitleaks:
     name: 1. Secret Scanning
@@ -30,3 +30,22 @@ jobs:
 
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v3
+
+
+  # =============================================
+  # 2. SAST
+  # =============================================
+  sast:
+    name: 2. SAST
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run Semgrep
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/javascript
+            p/nodejs
