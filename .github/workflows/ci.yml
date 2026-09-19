@@ -1,0 +1,65 @@
+name: Pipeline CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feature/*
+
+  pull_request:
+    branches:
+      - main
+      - develop
+      - feature/*
+
+jobs:
+
+  # =============================================
+  # 1. Secret Scanning
+  # =============================================
+  gitleaks:
+    name: 1. Secret Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with: 
+            fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+  # =============================================
+  # 2. SAST
+  # =============================================
+  sast:
+    name: 2. SAST
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run Semgrep
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/javascript
+            p/nodejs
+
+
+  # =============================================
+  # 3. Lint & Code Quality
+  # =============================================
+  lint:
+    name: 3. Lint & Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Lint
+        run: echo "✅ Lint & Code Quality - etapa ignorada temporariamente."
