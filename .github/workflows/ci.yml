@@ -49,3 +49,24 @@ jobs:
           config: >-
             p/javascript
             p/nodejs
+
+
+  # =============================================
+  # 3. Lint & Code Quality
+  # =============================================
+  lint:
+    name: 3. Lint & Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+            node-version: 24
+            cache: npm
+
+      - name: Install dependencies
+        run: npm run lint
