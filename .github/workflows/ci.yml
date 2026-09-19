@@ -1,0 +1,32 @@
+name: Pipeline CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feature/*
+
+  pull_request:
+    branches:
+      - main
+      - develop
+      - feature/*
+
+jobs:
+
+  # =============================================
+  # 1. Secrete Scanning
+  # =============================================
+  gitleaks:
+    name: 1. Secret Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with: 
+            fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
