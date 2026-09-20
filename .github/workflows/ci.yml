@@ -111,12 +111,6 @@ jobs:
       - name: Build Docker image
         run: docker build -t ecommerce-app:latest .
 
-      # TEMPORÁRIO: vamos verificar as dependências
-      # dentro da MESMA imagem que o Trivy irá analisar
-      - name: Inspect image dependencies
-        run: |
-          docker run --rm ecommerce-app:latest npm ls brace-expansion ip-address tar --all
-
       - name: Run Trivy - Docker image
         uses: aquasecurity/trivy-action@master
         with: 
