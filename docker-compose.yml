@@ -23,6 +23,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - devsecops-network
 
   postgres:
     image: postgres:16-alpine
@@ -41,6 +43,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - devsecops-network
 
   redis:
     image: redis:7-alpine
@@ -55,7 +59,32 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - devsecops-network
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: ecommerce-localstack
+    restart: unless-stopped
+    ports:
+      - "4566:4566"
+    environment:
+      - LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN:?LOCALSTACK_AUTH_TOKEN não configurado}
+        DEBUG: "0"
+        PERSISTENCE: "1"
+
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    networks:
+      - devsecops-network
 
 volumes:
   pgdata:
   redisdata:
+  localstack_data:
+
+networks:
+  devsecops-network:
+    driver: bridge
