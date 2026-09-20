@@ -1,7 +1,7 @@
 services:
   api:
     build: .
-    image: ${DOCKER_USERNAME:-projeto}ecommerce-api:latest
+    image: ${DOCKER_USERNAME:-Local}/api-ecommerce:latest
     container_name: ecommerce-api
     restart: unless-stopped
     ports:
