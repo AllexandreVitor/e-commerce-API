@@ -58,6 +58,8 @@ resource "aws_instance" "api_server" {
   }
 
   root_block_device {
-    encrypted = true
+    encrypted   = true
+    volume_size = 20
+    volume_type = "gp3"
   }
 }
