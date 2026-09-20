@@ -1,4 +1,7 @@
-FROM node:24-alpine AS builder
+FROM node:24-alpine
+
+# Corrige vulnerabilidades das dependências internas do npm
+RUN npm install -g npm@11.19.1
 
 WORKDIR /usr/src/app
 
