@@ -157,3 +157,158 @@ jobs:
           format: 'table'
           exit-code: 1
           severity: 'CRITICAL,HIGH'
+
+
+  # ============================================================
+  # 7. DAST - OWASP ZAP
+  # ============================================================ 
+  dast-scan:
+    name: 7. DAST com OWASP ZAP
+    runs-on: ubuntu-latest
+    needs:
+      - docker-build-trivy
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # ------------------------------------
+      # Criar rede Docker
+      # ------------------------------------
+      - name: Create Docker Network
+        run: docker network create dast-network
+
+      # ------------------------------------
+      # PostgreSQL
+      # ------------------------------------
+      - name: Start PostgreSQL
+        run: |
+          docker run -d \
+            --name dast-postgres \
+            --network dast-network \
+            -e POSTGRES_DB=${{ secrets.DB_NAME }} \
+            -e POSTGRES_USER=${{ secrets.DB_USER }} \
+            -e POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            postgres:16-alpine
+
+      # ------------------------------------
+      # Aguardar PostgreSQL
+      # ------------------------------------
+      - name: Wait for PostgreSQL
+        run: |
+          for i in $(seq 1 30); do
+            if docker exec dast-postgres \
+              pg_isready \
+              -U ${{ secrets.DB_USER }} \
+              -d ${{ secrets.DB_NAME }} > /dev/null 2>&1; then
+
+              echo "PostgreSQL is ready!"
+              exit 0
+            fi
+
+            echo "Waiting for PostgreSQL... ($i/30)"
+            sleep 2
+          done
+
+          echo "PostgreSQL did not become ready in 60 seconds."
+          exit 1
+
+      # ------------------------------------
+      # Redis
+      # ------------------------------------
+      - name: Start Redis
+        run: |
+          docker run -d \
+            --name dast-redis \
+            --network dast-network \
+            redis:7-alpine
+
+      # ------------------------------------
+      # Aguardar Redis
+      # ------------------------------------
+      - name: Wait for Redis
+        run: |
+          for i in $(seq 1 30); do
+            if docker exec dast-redis \
+              redis-cli ping | grep -q PONG; then
+              echo "Redis is ready!"
+              exit 0
+            fi
+
+            echo "Waiting for Redis... ($i/30)"
+            sleep 2
+          done
+
+          echo "Redis did not become ready in 60 seconds."
+          exit 1
+
+      # --------------------------------------------------------
+      # Construir imagem da API
+      # --------------------------------------------------------
+      - name: Build Docker Image for DAST
+        run: |
+          docker build \
+            -t ecommerce-image:${{ github.sha }} .
+
+      # --------------------------------------------------------
+      # Iniciar API
+      # --------------------------------------------------------
+      - name: Start Application for DAST
+        run: |
+          docker run -d \
+            --name dast-api \
+            --network dast-network \
+            -p 3000:3000 \
+            -e NODE_env=development \
+            -e PORT=3000 \
+            -e DB_HOST=dast-postgres \
+            -e DB_PORT=5432 \
+            -e DB_NAME=${{ secrets.DB_NAME }} \
+            -e DB_USER=${{ secrets.DB_USER }} \
+            -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            -e DB_POOL_MIN=2 \
+            -e DB_POOL_MAX=10 \
+            -e REDIS_HOST=dast-redis \
+            -e REDIS_PORT=6379 \
+            -e REDIS_PASSWORD= \
+            -e REDIS_DB=0 \
+            -e RATE_LIMIT_WINDOW_MS=900000 \
+            -e RATE_LIMIT_MAX_REQUESTS=100 \
+            ecommerce-image:${{ github.sha }}
+
+
+      # --------------------------------------------------------
+      # Verificar aplicação
+      # --------------------------------------------------------
+      - name: Verify Application is Running
+        run: |
+          echo "=== Docker containers ==="
+          docker ps
+          sleep 5
+
+          echo "=== Application Logs ==="
+          docker logs dast-api
+
+      - name: Wait for API
+        run: |
+          echo "Waiting for API to be ready..."
+          until curl --fail --silent http://localhost:3000/health; do
+            sleep 2
+          done
+
+          echo
+          echo "API is ready!"
+
+      - name: Show API documentation
+        run: |
+          curl --fail http://localhost:3000/api-docs.json
+
+      # --------------------------------------------------------
+      # OWASP ZAP
+      # --------------------------------------------------------
+      - name: Run OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: 'http://localhost:3000'
+          fail_action: false
+          allow_issue_writing: false
