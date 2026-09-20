@@ -1,6 +1,9 @@
 services:
   api:
     build: .
+    image: ${DOCKER_USERNAME:-projeto}ecommerce-api:latest
+    container_name: ecommerce-api
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
