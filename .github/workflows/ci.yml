@@ -176,7 +176,7 @@ jobs:
       # Criar rede Docker
       # ------------------------------------
       - name: Create Docker Network
-        run: docker network creat dast-network
+        run: docker network create dast-network
 
       # ------------------------------------
       # PostgreSQL
