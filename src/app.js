@@ -8,6 +8,7 @@ const env = require('./config/env');
 const routes = require('./routes');
 const errorHandler = require('./middlewares/error-handler');
 const notFound = require('./middlewares/not-found');
+const { register, metricsMiddleware } = require('./config/metrics');
 
 const app = express();
 
@@ -16,6 +17,9 @@ app.use(helmet());
 
 // CORS
 app.use(cors());
+
+// Prometheus metrics collection
+app.use(metricsMiddleware);
 
 // Rate limiting
 if (!env.isTest()) {
@@ -55,6 +59,12 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
   });
+});
+
+// Prometheus scrape endpoint
+app.get('/metrics', async (req, res) => {
+  res.setHeader('Content-Type', register.contentType);
+  res.send(await register.metrics());
 });
 
 // API routes
