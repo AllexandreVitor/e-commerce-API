@@ -12,7 +12,7 @@ env:
   API_IMAGE: ${{ secrets.DOCKER_USERNAME }}/api-ecommerce
   FRONTEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/frontend-ecommerce
 
-  jobs:
+jobs:
 
   # =============================================
   # 1. Secret Scanning
